@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'courses.apps.CoursesConfig',
-    'rest_framework'
+    'rest_framework',
+    'drf_yasg',
+    'oauth2_provider',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +52,49 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'E-course API',
+    'DESCRIPTION': 'This is a E-course official API documentation.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+
+}
+
+
+REST_FRAMEWORK = {
+    # other DRF settings here
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
+
+}
+
+#con fig api key for swagger
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "JWT [Bearer {JWT}]": {
+            "name": "Authorization",
+            "type": "apiKey",
+            "in": "header",
+        }
+    },
+    "USE_SESSION_AUTH": False,
+}
+
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 60 * 15,
+    'OAUTH_SINGLE_ACCESS_TOKEN': True,
+    'OAUTH_DELETE_EXPIRED': True
+}
+
+OAUTH2_INFO = {
+    "client_id": "ncs1nyF82fzCuJnayvBnLsvZ80nT4LyRCIBMRLXJ",
+    "client_secret": "FMxJ0PFLhPg0W6zVPn0qLUy6kAosLrgRtCagaLTAfeOeWjuFUDRt0fGzMFJBUyzRS6AiBOjQklT3MY7FKhxOSihLvu07jupmhShPZPtuH0BgKvQJ694SoDuyEQTDugCG"
+}
+
 
 ROOT_URLCONF = 'ecoursesv2.urls'
 

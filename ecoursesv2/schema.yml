@@ -1,0 +1,243 @@
+openapi: 3.0.3
+info:
+  title: Student API
+  version: 1.0.0
+  description: This is a student official API documentation.
+paths:
+  /categories/:
+    get:
+      operationId: categories_list
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+  /course/:
+    get:
+      operationId: course_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - course
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCourseList'
+          description: ''
+  /course/{id}/lessons/:
+    get:
+      operationId: course_lessons_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this course.
+        required: true
+      tags:
+      - course
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+          description: ''
+  /lessons/{id}/:
+    get:
+      operationId: lessons_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this lesson.
+        required: true
+      tags:
+      - lessons
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonDetailSerialize'
+          description: ''
+  /lessons/{id}/tags/:
+    post:
+      operationId: lessons_tags_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this lesson.
+        required: true
+      tags:
+      - lessons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonDetailSerialize'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LessonDetailSerialize'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LessonDetailSerialize'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonDetailSerialize'
+          description: ''
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        category:
+          type: integer
+          nullable: true
+      required:
+      - category
+      - created_date
+      - id
+      - image
+      - subject
+    LessonDetailSerialize:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          format: uri
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+        course:
+          type: integer
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+      required:
+      - content
+      - course
+      - created_date
+      - id
+      - subject
+      - tags
+      - updated_date
+    PaginatedCourseList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Course'
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - name
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

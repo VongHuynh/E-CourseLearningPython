@@ -6,8 +6,11 @@ from . import views
 router = routers.DefaultRouter()
 router.register("categories", views.CategoryViewSet, 'category')
 router.register("course", views.CourseViewSet, 'course')
+router.register("lessons", views.LessonViewSet, 'lessons')
+router.register("users", views.UserViewSet, 'users')
 
 #urls
 urlpatterns = [
     path('', include(router.urls)),
+    path('oauth2-info/', views.AuthInfo.as_view())
 ]

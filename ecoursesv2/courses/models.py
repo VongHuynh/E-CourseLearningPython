@@ -54,3 +54,12 @@ class Lesson(MyModelBase):  # course_lesson
     course = models.ForeignKey(Course,
                                related_name="lessons",
                                on_delete=models.CASCADE)
+    tags = models.ManyToManyField(
+        'Tag', related_name="lessonTag", blank=True, null=True)
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
