@@ -1,12 +1,13 @@
 from django.shortcuts import render
 from rest_framework import viewsets, generics, status, permissions, serializers
-from .models import Category, Course, Lesson, Tag, User
+from .models import Category, Comment, Course, Lesson, Tag, User
 from .serializers import (CategorySerializer,
                           CourseSerializer,
                           LessonSerializer,
                           TagSerializer,
                           LessonDetailSerialize,
-                          UserSerializer)
+                          UserSerializer,
+                          CommentSerializer)
 from .paginator import BasePaginator
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -55,6 +56,11 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     queryset = Lesson.objects.filter(active=True)
     serializer_class = LessonDetailSerialize
 
+    def get_permissions(self):
+        if self.action == 'add_comment':
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny]
+
     @action(methods=['post'], detail=True, url_path="tags")
     def add_Tag(self, request, pk):
         try:
@@ -72,6 +78,17 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
                                 status=status.HTTP_201_CREATED)
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+    @action(methods=['post'], detail=True, url_path="add-comment")
+    def add_comment(self, request, pk):
+        content = request.data.get('content')
+        if content:
+            c = Comment.objects.create(content=content,
+                        lesson=Lesson.objects.get(pk=pk),
+                        creator=request.user)
+            return Response(CommentSerializer(c).data,
+                            status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
@@ -86,6 +103,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         return Response(self.serializer_class(request.user).data,
         status=status.HTTP_200_OK)
 
+
 # class EmptyPayloadResponseSerializer(serializers.Serializer):
 #     detail = serializers.CharField()
 class AuthInfo(APIView):
@@ -93,3 +111,20 @@ class AuthInfo(APIView):
     def get(self, request):
         return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
 
+
+class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
+    queryset = Comment.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CommentSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user == self.get_object().creator:
+            return super().destroy(request, *args, **kwargs)
+
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    def patch(self, request, *args, **kwargs):
+        if request.user == self.get_object().creator:
+            return super().patch(request, *args, **kwargs)
+
+        return Response(status=status.HTTP_403_FORBIDDEN)
