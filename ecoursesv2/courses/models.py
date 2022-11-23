@@ -74,3 +74,35 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+
+class ActionBase(models.Model):
+    class Meta:
+        abstract = True
+
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
+class Action(ActionBase):
+    LIKE, HAHA, HEART = range(3)
+    ACTIONS = [
+        (LIKE, 'like'),
+        (HAHA, 'haha'),
+        (HEART, 'heart')
+    ]
+    type = models.PositiveSmallIntegerField(choices=ACTIONS, default=LIKE)
+
+
+class Rating(ActionBase):
+    rate = models.PositiveSmallIntegerField(default=0)
+
+
+class LessonView(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    views = models.IntegerField(default=0)
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE)

@@ -1,13 +1,16 @@
 from django.shortcuts import render
 from rest_framework import viewsets, generics, status, permissions, serializers
-from .models import Category, Comment, Course, Lesson, Tag, User
+from .models import Action, Category, Comment, Course, Lesson, Rating, Tag, User, LessonView
 from .serializers import (CategorySerializer,
                           CourseSerializer,
                           LessonSerializer,
                           TagSerializer,
                           LessonDetailSerialize,
                           UserSerializer,
-                          CommentSerializer)
+                          CommentSerializer,
+                          ActionSerializer,
+                          RatingSerializer,
+                          LessonViewSerializer)
 from .paginator import BasePaginator
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,6 +18,7 @@ from rest_framework.views import APIView
 from django.http import Http404
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
+from django.db.models import F
 
 # Create your views here.
 
@@ -57,9 +61,9 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     serializer_class = LessonDetailSerialize
 
     def get_permissions(self):
-        if self.action == 'add_comment':
+        if self.action in ['add_comment', 'take_action', 'rate']:
             return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny]
+        return [permissions.AllowAny()]
 
     @action(methods=['post'], detail=True, url_path="tags")
     def add_Tag(self, request, pk):
@@ -83,12 +87,44 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
         content = request.data.get('content')
         if content:
             c = Comment.objects.create(content=content,
-                        lesson=Lesson.objects.get(pk=pk),
-                        creator=request.user)
+                                       lesson=Lesson.objects.get(pk=pk),
+                                       creator=request.user)
             return Response(CommentSerializer(c).data,
                             status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    @action(methods=['post'], detail=True, url_path='like')
+    def take_action(self, request, pk):
+        try:
+            action_type = int(request.data['type'])
+        except IndexError | ValueError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            action = Action.objects.create(type=action_type, creator=request.user,
+                                           lesson=self.get_object())
+
+            return Response(ActionSerializer(action).data, status=status.HTTP_200_OK)
+
+    @action(methods=['post'], detail=True, url_path='rate')
+    def rate(self, request, pk):
+        try:
+            rating = int(request.data['rating'])
+        except IndexError | ValueError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            r = Rating.objects.create(rating=rating, creator=request.user,
+                                      lesson=self.get_object())
+
+            return Response(ActionSerializer(r).data, status=status.HTTP_200_OK)
+
+    @action(methods=['get'], detail=True, url_path='view')
+    def inc_view(self, request, pk):
+        v, created = LessonView.objects.get_or_create(lesson=self.get_object())
+        v.views = F('views') + 1
+        v.save()
+        v.refresh_from_db()
+        
+        return Response(LessonViewSerializer(v).data, status=status.HTTP_200_OK)
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
@@ -98,16 +134,17 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
         if self.action == "get_current_user":
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+
     @action(methods=['GET'], detail=False, url_path="current-users")
     def get_current_user(self, request):
         return Response(self.serializer_class(request.user).data,
-        status=status.HTTP_200_OK)
+                        status=status.HTTP_200_OK)
 
 
 # class EmptyPayloadResponseSerializer(serializers.Serializer):
 #     detail = serializers.CharField()
 class AuthInfo(APIView):
-    #@extend_schema(request=None, responses=EmptyPayloadResponseSerializer)
+    # @extend_schema(request=None, responses=EmptyPayloadResponseSerializer)
     def get(self, request):
         return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
 

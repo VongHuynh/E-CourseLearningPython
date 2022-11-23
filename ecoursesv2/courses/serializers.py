@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer, SerializerMethodField
-from .models import Category, Comment, Course, Lesson, Tag, User
+from .models import Category, Comment, Course, Lesson, Tag, User, Action, Rating, LessonView
 
 
 class CategorySerializer(ModelSerializer):
@@ -68,3 +68,21 @@ class CommentSerializer(ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'content', 'created_date', 'updated_date']
+
+
+class ActionSerializer(ModelSerializer):
+    class Meta:
+        model = Action
+        fields = ["id", "type", "created_date"]
+
+
+class RatingSerializer(ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ["id", "type", "created_date"]
+
+
+class LessonViewSerializer(ModelSerializer):
+    class Meta:
+        model = LessonView
+        fields = ["id", "views", "lesson"]
